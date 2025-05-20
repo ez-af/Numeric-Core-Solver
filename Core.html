@@ -23,15 +23,28 @@
 
   <textarea id="inputBox" placeholder="Enter text or numbers..." style="text-transform:uppercase"></textarea>
   <button onclick="processInput()">Process</button>
+  <button onclick="removeSpaces()">Remove Spaces</button>
+  <button onclick="clearLog()">Clear Log</button>
   <div id="log"></div>
 
   <script>
     const logEl = document.getElementById("log");
     const inputBox = document.getElementById("inputBox");
 
+    function clearLog() {
+      document.getElementById("log").textContent = '';
+    }
+
     function log(message) {
       logEl.textContent += message + "\n";
       logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function removeSpaces() {
+      const output = inputBox.value.replace(/\s+/g, '');
+      log(`${inputBox.value} → ${output}`);
+      inputBox.value = output
+      inputBox.focus();
     }
 
     function isAlpha(str) {
@@ -43,6 +56,7 @@
     }
 
     function letterToNumber(str) {
+      str = str.replace(/\s+/g, '')
       const output = [...str.toUpperCase()].map(c => c.charCodeAt(0) - 64).join(" ");
       log(`${str} → ${output}`);
       log("");
