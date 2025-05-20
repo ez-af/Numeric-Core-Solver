@@ -1,4 +1,4 @@
-*Simple 1-file Numeric core solver*
+*Simple 1-file Numeric Core Solver for Blue Prince*
 
 - Enter numbers to find numeric core
 - Enter letters to convert to space-separated numbers
