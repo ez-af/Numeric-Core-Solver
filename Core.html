@@ -25,6 +25,8 @@
   <button onclick="processInput()">Process</button>
   <button onclick="removeSpaces()">Remove Spaces</button>
   <button onclick="clearLog()">Clear Log</button>
+  <button onclick="copyInput()">Copy</button>
+  <span id="copyStatus" style="color:green; font-size:0.9em; margin-top:5px;"></span>
   <div id="log"></div>
 
   <script>
@@ -33,6 +35,17 @@
 
     function clearLog() {
       document.getElementById("log").textContent = '';
+    }
+
+    function copyInput() {
+      const text = document.getElementById("inputBox").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const status = document.getElementById("copyStatus");
+        status.textContent = "✅ Copied to clipboard";
+        setTimeout(() => {
+          status.textContent = "";
+        }, 1500); // message disappears after 1.5 seconds
+      });
     }
 
     function log(message) {
