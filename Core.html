@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Input Processor</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    textarea { width: 100%; height: 50px; }
+    #log { white-space: pre-wrap; margin-top: 10px; background: #f0f0f0; padding: 10px; border: 1px solid #ccc; height: 200px; overflow-y: auto; }
+    button { margin-top: 10px; padding: 10px 20px; }
+  </style>
+</head>
+<body>
+
+  <h2>Numeric Core Solver</h2>
+
+  <small style="display:block; margin-bottom:10px;">
+    Enter numbers to find numeric core <br>
+    Enter letters to convert to space-separated numbers <br>
+    Enter 4 space-separated numbers to skip sequence solver <br>
+    <br>
+  </small>
+
+  <textarea id="inputBox" placeholder="Enter text or numbers..." style="text-transform:uppercase"></textarea>
+  <button onclick="processInput()">Process</button>
+  <div id="log"></div>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const inputBox = document.getElementById("inputBox");
+
+    function log(message) {
+      logEl.textContent += message + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function isAlpha(str) {
+      return /^[a-zA-Z]+$/.test(str);
+    }
+
+    function isNumeric(str) {
+      return /^\d+$/.test(str);
+    }
+
+    function letterToNumber(str) {
+      const output = [...str.toUpperCase()].map(c => c.charCodeAt(0) - 64).join(" ");
+      log(`${str} → ${output}`);
+      log("");
+      inputBox.value = output;
+    }
+
+    function getBestSplit(str) {
+      const len = str.length;
+      let bestParts = null;
+      let bestScore = Infinity;
+
+      for (let i = 1; i < len - 2; i++) {
+        for (let j = i + 1; j < len - 1; j++) {
+          for (let k = j + 1; k < len; k++) {
+            const part1 = parseInt(str.slice(0, i));
+            const part2 = parseInt(str.slice(i, j));
+            const part3 = parseInt(str.slice(j, k));
+            const part4 = parseInt(str.slice(k));
+            if ([part1, part2, part3, part4].some(isNaN)) continue;
+
+            const score = part1 + part2 + part3 + part4; // smaller parts = better
+            if (score < bestScore) {
+              bestScore = score;
+              bestParts = [part1, part2, part3, part4];
+            }
+          }
+        }
+      }
+
+      return bestParts;
+    }
+
+    function permute(arr) {
+      if (arr.length <= 1) return [arr];
+      const result = [];
+      for (let i = 0; i < arr.length; i++) {
+        const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+        for (const perm of permute(rest)) {
+          result.push([arr[i], ...perm]);
+        }
+      }
+      return result;
+    }
+
+    function evaluateLeftToRight(nums, ops) {
+      let result = nums[0];
+
+      for (let i = 0; i < ops.length; i++) {
+        const op = ops[i];
+        const next = nums[i + 1];
+
+        if (op === '+') result += next;
+        else if (op === '-') result -= next;
+        else if (op === '*') result *= next;
+        else if (op === '/') result = next === 0 ? NaN : result / next;
+      }
+
+      return result;
+    }
+
+    function evaluateAllExpressions(parts) {
+      const ops = ['-', '*', '/'];
+      const permutations = permute(ops);
+      const [a, b, c, d] = parts;
+
+      let minResult = Infinity;
+      let bestExpr = "";
+      const allExprs = [];
+
+      for (const [op1, op2, op3] of permutations) {
+        const expr = `+ ${a} ${op1} ${b} ${op2} ${c} ${op3} ${d}`;
+        const result = evaluateLeftToRight([a, b, c, d], [op1, op2, op3]);
+
+        allExprs.push(`${expr} = ${isNaN(result) ? 'NaN' : result}`);
+
+        if (!isNaN(result) && result >= 0 && Number.isInteger(result) && result < minResult) {
+          minResult = result;
+          bestExpr = expr;
+        }
+      }
+
+      if (minResult === Infinity) {
+        return { expression: null, result: null, allExprs };
+      }
+
+      return { expression: bestExpr, result: minResult, allExprs };
+    }
+
+
+
+    function numberProcessing(str) {
+      let parts;
+
+      // Check for 4 space-separated numbers
+      if (/^\d+ \d+ \d+ \d+$/.test(str)) {
+        parts = str.split(" ").map(Number);
+      } else {
+        parts = getBestSplit(str);
+        if (!parts) {
+          log(`${str} — Cannot split into four parts.`);
+          
+          const num = parseInt(str.replace(/\s+/g, ""), 10);
+          if (!isNaN(num) && num >= 1 && num <= 26) {
+            const letter = String.fromCharCode(64 + num);
+            log(`${num} → ${letter}`);
+            inputBox.value = letter;
+          }
+          else {
+            log(`${str} — Cannot assign a letter.`);
+          }
+
+          log("");
+          return;
+        }
+        const allMapToLetters = parts.every(p => p >= 1 && p <= 26);
+        if (allMapToLetters) {
+          const letters = parts.map(p => String.fromCharCode(64 + p)).join(" ");
+          log(`${str} → ${parts.join(" ")} (Letters — ${letters})`);
+        }
+        else {
+          log(`${str} → ${parts.join(" ")}`);
+        }
+      }
+
+      const { expression, result, allExprs } = evaluateAllExpressions(parts);
+      if (!expression || !Number.isFinite(result)) {
+        log(`${str} — No valid expression found.`);
+        allExprs.forEach(e => log("Tried: " + e));
+        log("");
+        return;
+      }
+
+      log(`${str} → ${expression}`);
+      log(`Core — ${result}`);
+      inputBox.value = result;
+
+      if (result >= 1 && result <= 26) {
+        const letter = String.fromCharCode(64 + result);
+        log(`Letter — ${letter}`);
+      }
+      log("");
+      
+    }
+
+
+    function processInput() {
+      const val = inputBox.value.trim().toUpperCase();
+      if (!val) return;
+
+      if (isAlpha(val.replace(/\s+/g, ''))) {
+        letterToNumber(val);
+      } else if (/^(\d+\s*)+$/.test(val)) {
+        numberProcessing(val);
+      } else {
+        log(`${str} — Invalid input: must be only letters or only digits.`);
+        log("");
+      }
+    }
+  </script>
+
+</body>
+</html>
