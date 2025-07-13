@@ -1,3 +1,5 @@
+https://ez-af.github.io/Numeric-Core-Solver/
+
 *Simple 1-file Numeric Core Solver for Blue Prince*
 
 - Enter numbers to find numeric core
